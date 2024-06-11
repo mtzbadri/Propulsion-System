@@ -5,10 +5,10 @@ Serial.begin(9600);
 
 void loop() {
   // put your main code here, to run repeatedly:
-int motor1Command = analogRead(A0);
-int motor2Command = analogRead(A12);
+int motor1Command = analogRead(A12);
+int motor2Command = analogRead(A8);
 int motor3Command = analogRead(A4);
-int motor4Command = analogRead(A8);
+int motor4Command = analogRead(A4);
 
   Serial.print("Fwd: "); Serial.print(motor1Command);
   Serial.print("    Back: "); Serial.print(motor2Command);
