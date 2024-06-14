@@ -7,13 +7,13 @@ const int BUTTON_PRESS_THRESHOLD = 150; // Set your desired value for button pre
 
 
 // Arduino Pins
-const byte Joystick1 = A8; // Joystick Y-axis (motor 1)
-const byte Joystick2 = A0; // Joystick Z-axis (motor 2)
+const byte Joystick1 = A0; // Joystick Y-axis (motor 1)
+const byte Joystick2 = A8; // Joystick Z-axis (motor 2)
 const byte Button1 = A4;
 const byte Button2 = A4;
-const byte TH_L = 24;
+const byte TH_L = 27;
 const byte TH_R = 26;
-const byte TH_U = 27; 
+const byte TH_U = 24; 
 const byte TH_D = 25;
 
 // Servos
