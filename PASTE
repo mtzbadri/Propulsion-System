@@ -5,14 +5,12 @@ const int MAX = 150; // Value between 0-400
 const int CENTER = 1500;
 const int BUTTON_PRESS_THRESHOLD = 150; // Set your desired value for button press
 
+
 // Arduino Pins
 const byte Joystick1 = A8; // Joystick Y-axis (motor 1)
 const byte Joystick2 = A0; // Joystick Z-axis (motor 2)
-const byte Joystick3 = A4; // Joystick for motor 3 (new input)
-const byte Joystick4 = A4; // Joystick for motor 4 (new input)
 const byte Button1 = A4;
 const byte Button2 = A4;
-const byte Button3 = A8; // New button for motor 1
 const byte TH_L = 24;
 const byte TH_R = 26;
 const byte TH_U = 27; 
@@ -41,36 +39,44 @@ void setup() {
 }
 
 void loop() {
-  int rawmotor1Command = map(analogRead(Joystick1), 0, 1023, -MAX, MAX);
-  int rawmotor2Command = map(analogRead(Joystick2), 0, 1023, -MAX, MAX);
-  int rawmotor3Command = map(analogRead(Joystick3), 0, 1023, -MAX, MAX);
-  int rawmotor4Command = map(analogRead(Joystick4), 0, 1023, -MAX, MAX);
+  int rawmotor1Command = analogRead(Joystick1);
+  int rawmotor2Command = analogRead(Joystick2);
+  int rawmotor3Command = analogRead(Button1);
+  int rawmotor4Command = analogRead(Button2);
 
-  int motor1Command = rawmotor1Command;
-  int motor2Command = rawmotor2Command;
-  int motor3Command = rawmotor3Command;
-  int motor4Command = rawmotor4Command;
+  int motor1Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
+  int motor2Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
+  int motor3Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
+  int motor4Command = analogRead(Button2) == rawmotor4Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
 
-  // Motor 1 button logic
-  if (analogRead(Button3) > BUTTON_PRESS_THRESHOLD) {
+  if (motor1Command > 0) {
     motor1Command = MAX;
-  } else if (analogRead(Button3) < BUTTON_PRESS_THRESHOLD) {
+  } else if (motor1Command < 0) {
     motor1Command = -MAX;
   } else {
     motor1Command = 0;
   }
 
-  // Motor 3 and 4 button logic
-  if (analogRead(Button1) > BUTTON_PRESS_THRESHOLD) {
-    motor3Command = MAX;
-  } else if (analogRead(Button2) > BUTTON_PRESS_THRESHOLD) {
-    motor4Command = MAX;
+  if (motor2Command > 0) {
+    motor2Command = MAX;
+  } else if (motor2Command < 0) {
+    motor2Command = -MAX;
   } else {
-    motor3Command = 0;
-    motor4Command = 0;
+    motor2Command = 0;
   }
 
-  // Adjust motor commands based on joystick inputs
+  if (motor3Command > 0) {
+    // Button 1 is pressed, set motor4Command to the negative value of motor3Command
+    motor4Command = -motor3Command;
+  } else if (motor4Command > 0) {
+    // Button 2 is pressed, set motor4Command to the negative value of motor4Command
+    motor3Command = -motor4Command;
+  } else {
+    // Neither button is pressed, set motor4Command to 0
+    motor4Command = 0;
+    motor3Command = 0;
+  }
+
   if (rawmotor1Command > 600) {
     motor1Command = MAX;
   } else if (rawmotor1Command < 400) {
@@ -79,8 +85,17 @@ void loop() {
 
   if (rawmotor2Command > 600) {
     motor2Command = MAX;
-  } else if (rawmotor2Command < 400) {
+  } else if (rawmotor1Command < 400) {
     motor2Command = -MAX;
+  }
+
+  // For Button2 (A4)
+  if (rawmotor4Command > 600) { // A4 pressed up
+    motor4Command = MAX;
+    motor3Command = MAX;
+  } else if (rawmotor4Command < 400) { // A4 pressed down
+    motor4Command = -MAX;
+    motor3Command = -MAX;
   }
 
   thL.writeMicroseconds(CENTER + motor1Command);
@@ -92,8 +107,9 @@ void loop() {
   Serial.print("    Back: "); Serial.print(motor2Command);
   Serial.print("      ");
 
-  Serial.print("Motor 3: "); Serial.print(motor3Command);
-  Serial.print("    Motor 4: "); Serial.println(motor4Command);
+
+  Serial.print("Button 1: "); Serial.print(motor3Command);
+  Serial.print("    Button 2: "); Serial.println(motor4Command);
 
   delay(500);
 }
