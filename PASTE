@@ -44,8 +44,8 @@ void loop() {
   int rawmotor3Command = analogRead(Button1);
   int rawmotor4Command = analogRead(Button2);
 
-  int motor1Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
-  int motor2Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
+  int motor1Command = analogRead(Joystick1) == rawmotor1Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
+  int motor2Command = analogRead(Joystick2) == rawmotor2Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
   int motor3Command = analogRead(Button1) == rawmotor3Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
   int motor4Command = analogRead(Button2) == rawmotor4Command > BUTTON_PRESS_THRESHOLD ? BUTTON_PRESS_THRESHOLD : 0;
 
