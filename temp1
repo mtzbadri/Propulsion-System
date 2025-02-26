@@ -1,0 +1,23 @@
+// Test code to run Motor1 independently
+#define M1_IN1 22
+#define M1_IN2 23
+#define M1_EN 3    // PWM pin
+
+void setup() {
+  Serial.begin(115200);
+  // Set motor pins as outputs
+  pinMode(M1_IN1, OUTPUT);
+  pinMode(M1_IN2, OUTPUT);
+  pinMode(M1_EN, OUTPUT);
+  
+  Serial.println("Test: Running Motor1 at half speed forward");
+}
+
+void loop() {
+  // Set direction forward
+  digitalWrite(M1_IN1, HIGH);
+  digitalWrite(M1_IN2, LOW);
+  // Run at half speed (PWM value 128 out of 255)
+  analogWrite(M1_EN, 128);
+  delay(1000);
+}
