@@ -1,0 +1,74 @@
+// Motor driver pin assignments (adjust as needed)
+#define M1_IN1 22
+#define M1_IN2 23
+#define M1_EN 3    // Must be a PWM pin
+
+#define M2_IN1 24
+#define M2_IN2 25
+#define M2_EN 5    // Must be a PWM pin
+
+#define M3_IN1 26
+#define M3_IN2 27
+#define M3_EN 6    // Must be a PWM pin
+
+#define M4_IN1 28
+#define M4_IN2 29
+#define M4_EN 9    // Must be a PWM pin
+
+void setup() {
+  Serial.begin(115200);   // USB Serial for debugging
+  Serial1.begin(115200);  // UART communication with ESP32
+  Serial.println("Mega is ready!");
+
+  // Set motor pins as outputs
+  pinMode(M1_IN1, OUTPUT); pinMode(M1_IN2, OUTPUT); pinMode(M1_EN, OUTPUT);
+  pinMode(M2_IN1, OUTPUT); pinMode(M2_IN2, OUTPUT); pinMode(M2_EN, OUTPUT);
+  pinMode(M3_IN1, OUTPUT); pinMode(M3_IN2, OUTPUT); pinMode(M3_EN, OUTPUT);
+  pinMode(M4_IN1, OUTPUT); pinMode(M4_IN2, OUTPUT); pinMode(M4_EN, OUTPUT);
+}
+
+void loop() {
+  // Check if data is available from the ESP32
+  if (Serial1.available()) {
+    String receivedData = Serial1.readStringUntil('\n'); // Data format: "M1:xxx,M2:xxx,M3:xxx,M4:xxx"
+    Serial.println("Received: " + receivedData);
+
+    // Variables to hold motor speeds
+    int m1, m2, m3, m4;
+    
+    // Parse the string using sscanf. Ensure the format matches exactly.
+    if (sscanf(receivedData.c_str(), "M1:%d,M2:%d,M3:%d,M4:%d", &m1, &m2, &m3, &m4) == 4) {
+      // Drive each motor with the parsed value
+      driveMotor(M1_IN1, M1_IN2, M1_EN, m1);
+      driveMotor(M2_IN1, M2_IN2, M2_EN, m2);
+      driveMotor(M3_IN1, M3_IN2, M3_EN, m3);
+      driveMotor(M4_IN1, M4_IN2, M4_EN, m4);
+    } else {
+      Serial.println("Error parsing motor data");
+    }
+  } else {
+    Serial.println("Waiting for data...");
+    delay(1000);
+  }
+}
+
+// Function to drive a motor using an H-bridge
+// pinIn1, pinIn2: control the motor direction
+// pinEn: PWM-enabled pin for speed control
+// speed: value from -400 to 400 (negative values reverse the motor)
+void driveMotor(int pinIn1, int pinIn2, int pinEn, int speed) {
+  // Map the absolute speed value (0–400) to a PWM value (0–255)
+  int pwm = map(abs(speed), 0, 400, 0, 255);
+  
+  // Set direction based on sign of speed
+  if (speed >= 0) {
+    digitalWrite(pinIn1, HIGH);
+    digitalWrite(pinIn2, LOW);
+  } else {
+    digitalWrite(pinIn1, LOW);
+    digitalWrite(pinIn2, HIGH);
+  }
+  
+  // Output the PWM speed
+  analogWrite(pinEn, pwm);
+}
