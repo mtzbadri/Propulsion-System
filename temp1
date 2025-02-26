@@ -1,23 +1,61 @@
-// Test code to run Motor1 independently
-#define M1_IN1 22
-#define M1_IN2 23
-#define M1_EN 3    // PWM pin
+#include <HardwareSerial.h>
+#include <Bluepad32.h>
+
+#define RXD2 16  // ESP32 RX pin (Connect to Mega TX)
+#define TXD2 17  // ESP32 TX pin (Connect to Mega RX)
+
+HardwareSerial mySerial(2);
+ControllerPtr myControllers[BP32_MAX_GAMEPADS];
+
+void onConnectedController(ControllerPtr ctl) {
+    for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+        if (myControllers[i] == nullptr) {
+            myControllers[i] = ctl;
+            break;
+        }
+    }
+}
+
+void onDisconnectedController(ControllerPtr ctl) {
+    for (int i = 0; i < BP32_MAX_GAMEPADS; i++) {
+        if (myControllers[i] == ctl) {
+            myControllers[i] = nullptr;
+            break;
+        }
+    }
+}
+
+void processGamepad(ControllerPtr ctl) {
+    int motor1 = map(ctl->axisY(), -511, 512, -400, 400);
+    int motor2 = map(ctl->axisRY(), -511, 512, -400, 400);
+    int motor3 = map(ctl->axisX(), -511, 512, -400, 400);
+    int motor4 = map(ctl->axisRX(), -511, 512, -400, 400);
+    
+    String data = "M1:" + String(motor1) + ",M2:" + String(motor2) + ",M3:" + String(motor3) + ",M4:" + String(motor4) + "\n";
+    mySerial.print(data);
+    Serial.println("Sent: " + data);  // Debugging output
+}
+
+void processControllers() {
+    for (auto myController : myControllers) {
+        if (myController && myController->isConnected() && myController->hasData()) {
+            processGamepad(myController);
+        }
+    }
+}
 
 void setup() {
-  Serial.begin(115200);
-  // Set motor pins as outputs
-  pinMode(M1_IN1, OUTPUT);
-  pinMode(M1_IN2, OUTPUT);
-  pinMode(M1_EN, OUTPUT);
-  
-  Serial.println("Test: Running Motor1 at half speed forward");
+    Serial.begin(115200);  // Debugging
+    mySerial.begin(115200, SERIAL_8N1, RXD2, TXD2);  // UART communication with Mega
+    BP32.setup(&onConnectedController, &onDisconnectedController);
+    BP32.forgetBluetoothKeys();
+    BP32.enableVirtualDevice(false);
 }
 
 void loop() {
-  // Set direction forward
-  digitalWrite(M1_IN1, HIGH);
-  digitalWrite(M1_IN2, LOW);
-  // Run at half speed (PWM value 128 out of 255)
-  analogWrite(M1_EN, 128);
-  delay(1000);
+    bool dataUpdated = BP32.update();
+    if (dataUpdated) {
+        processControllers();
+    }
+    delay(100);
 }
