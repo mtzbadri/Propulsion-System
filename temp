@@ -1,48 +1,63 @@
-// Motor driver pin assignments (adjust as needed)
-#define M1_IN1 22
-#define M1_IN2 23
-#define M1_EN 3    // Must be a PWM pin
+#include <Servo.h>
 
-#define M2_IN1 24
-#define M2_IN2 25
-#define M2_EN 5    // Must be a PWM pin
+// Define the pins for ESC control (must be PWM-capable for the Servo library)
+#define M1_ESC_PIN 3
+#define M2_ESC_PIN 5
+#define M3_ESC_PIN 6
+#define M4_ESC_PIN 9
 
-#define M3_IN1 26
-#define M3_IN2 27
-#define M3_EN 6    // Must be a PWM pin
-
-#define M4_IN1 28
-#define M4_IN2 29
-#define M4_EN 9    // Must be a PWM pin
+Servo motor1, motor2, motor3, motor4;
 
 void setup() {
   Serial.begin(115200);   // USB Serial for debugging
   Serial1.begin(115200);  // UART communication with ESP32
-  Serial.println("Mega is ready!");
 
-  // Set motor pins as outputs
-  pinMode(M1_IN1, OUTPUT); pinMode(M1_IN2, OUTPUT); pinMode(M1_EN, OUTPUT);
-  pinMode(M2_IN1, OUTPUT); pinMode(M2_IN2, OUTPUT); pinMode(M2_EN, OUTPUT);
-  pinMode(M3_IN1, OUTPUT); pinMode(M3_IN2, OUTPUT); pinMode(M3_EN, OUTPUT);
-  pinMode(M4_IN1, OUTPUT); pinMode(M4_IN2, OUTPUT); pinMode(M4_EN, OUTPUT);
+  // Attach ESC control pins to Servo objects
+  motor1.attach(M1_ESC_PIN);
+  motor2.attach(M2_ESC_PIN);
+  motor3.attach(M3_ESC_PIN);
+  motor4.attach(M4_ESC_PIN);
+
+  // Send neutral signal (1500 microseconds) to arm ESCs
+  motor1.writeMicroseconds(1500);
+  motor2.writeMicroseconds(1500);
+  motor3.writeMicroseconds(1500);
+  motor4.writeMicroseconds(1500);
+  
+  // Delay to allow the ESCs to arm properly (as required by your ESCs)
+  delay(7000);
+  Serial.println("Mega is ready and ESCs armed!");
 }
 
 void loop() {
   // Check if data is available from the ESP32
   if (Serial1.available()) {
-    String receivedData = Serial1.readStringUntil('\n'); // Data format: "M1:xxx,M2:xxx,M3:xxx,M4:xxx"
+    // Expected data format: "M1:xxx,M2:xxx,M3:xxx,M4:xxx"
+    String receivedData = Serial1.readStringUntil('\n');
     Serial.println("Received: " + receivedData);
 
-    // Variables to hold motor speeds
     int m1, m2, m3, m4;
     
-    // Parse the string using sscanf. Ensure the format matches exactly.
+    // Parse the received data
     if (sscanf(receivedData.c_str(), "M1:%d,M2:%d,M3:%d,M4:%d", &m1, &m2, &m3, &m4) == 4) {
-      // Drive each motor with the parsed value
-      driveMotor(M1_IN1, M1_IN2, M1_EN, m1);
-      driveMotor(M2_IN1, M2_IN2, M2_EN, m2);
-      driveMotor(M3_IN1, M3_IN2, M3_EN, m3);
-      driveMotor(M4_IN1, M4_IN2, M4_EN, m4);
+      // Map input range (-400 to 400) to ESC pulse width range (1100 to 1900 microseconds)
+      int s1 = map(m1, -400, 400, 1100, 1900);
+      int s2 = map(m2, -400, 400, 1100, 1900);
+      int s3 = map(m3, -400, 400, 1100, 1900);
+      int s4 = map(m4, -400, 400, 1100, 1900);
+
+      // Send the mapped signals to each ESC
+      motor1.writeMicroseconds(s1);
+      motor2.writeMicroseconds(s2);
+      motor3.writeMicroseconds(s3);
+      motor4.writeMicroseconds(s4);
+
+      // Debug output of the mapped values
+      Serial.print("Motor signals: ");
+      Serial.print(s1); Serial.print(", ");
+      Serial.print(s2); Serial.print(", ");
+      Serial.print(s3); Serial.print(", ");
+      Serial.println(s4);
     } else {
       Serial.println("Error parsing motor data");
     }
@@ -50,25 +65,4 @@ void loop() {
     Serial.println("Waiting for data...");
     delay(1000);
   }
-}
-
-// Function to drive a motor using an H-bridge
-// pinIn1, pinIn2: control the motor direction
-// pinEn: PWM-enabled pin for speed control
-// speed: value from -400 to 400 (negative values reverse the motor)
-void driveMotor(int pinIn1, int pinIn2, int pinEn, int speed) {
-  // Map the absolute speed value (0–400) to a PWM value (0–255)
-  int pwm = map(abs(speed), 0, 400, 0, 255);
-  
-  // Set direction based on sign of speed
-  if (speed >= 0) {
-    digitalWrite(pinIn1, HIGH);
-    digitalWrite(pinIn2, LOW);
-  } else {
-    digitalWrite(pinIn1, LOW);
-    digitalWrite(pinIn2, HIGH);
-  }
-  
-  // Output the PWM speed
-  analogWrite(pinEn, pwm);
 }
